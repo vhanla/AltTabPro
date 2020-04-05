@@ -8,6 +8,7 @@ AltTabPro is a replica of Windows 10 Alt-Tab task switcher with extra features l
 - Blacklist
 - Restart/Relaunch/Kill
 - Carrousel mode
+- List mode / Hybrid mode
 
 ### Multimonitor suppor:
 
@@ -37,3 +38,7 @@ Limitations: Requires elevations privileges if you want to manipulate elevated r
 ### Carrousel mode
 
 You can list tasks using a carrousel like animation
+
+### List mode / Hybrid mode
+
+Lists apps in simple vertical listbox, but you can also show its window in the list side
