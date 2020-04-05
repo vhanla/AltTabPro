@@ -10,7 +10,7 @@ AltTabPro is a replica of Windows 10 Alt-Tab task switcher with extra features l
 - Carrousel mode
 - List mode / Hybrid mode
 
-### Multimonitor suppor:
+### Multimonitor support:
 
 - Detects current application's monitor and Alt-Tab will show in that monitor
 - You can stick to specific monitor if desired
@@ -42,3 +42,4 @@ You can list tasks using a carrousel like animation
 ### List mode / Hybrid mode
 
 Lists apps in simple vertical listbox, but you can also show its window in the list side
+
