@@ -1,0 +1,48 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{DCA6B1A0-867E-45CB-BC12-9CBC2D17E532}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="AltTabPro.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="HotkeyHook.dproj">
+            <Dependencies>AltTabPro.dproj</Dependencies>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="AltTabPro">
+        <MSBuild Projects="AltTabPro.dproj"/>
+    </Target>
+    <Target Name="AltTabPro:Clean">
+        <MSBuild Projects="AltTabPro.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="AltTabPro:Make">
+        <MSBuild Projects="AltTabPro.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="HotkeyHook" DependsOnTargets="AltTabPro">
+        <MSBuild Projects="HotkeyHook.dproj"/>
+    </Target>
+    <Target Name="HotkeyHook:Clean" DependsOnTargets="AltTabPro:Clean">
+        <MSBuild Projects="HotkeyHook.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="HotkeyHook:Make" DependsOnTargets="AltTabPro:Make">
+        <MSBuild Projects="HotkeyHook.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="AltTabPro;HotkeyHook"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="AltTabPro:Clean;HotkeyHook:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="AltTabPro:Make;HotkeyHook:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>
