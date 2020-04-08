@@ -128,6 +128,7 @@ begin
     begin
       SwitchToThisWindow(StrToInt(appHandlers[ListBox1.ItemIndex]), True);
     end;
+    ListApps;
   end;
 end;
 
@@ -142,7 +143,11 @@ var
   Res: Integer;
   command: String;
 begin
-  show;
+  if not Visible then
+  begin
+    ListApps;
+    Show;
+  end;
   //SetLength(KeyName, 32);
   //Res := GetKeyNameText(Msg.LParam, @KeyName[1], Length(KeyName));
   //KeyName := copy(KeyName, 1, Res);
