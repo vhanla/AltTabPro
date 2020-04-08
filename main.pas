@@ -4,10 +4,12 @@ interface
 
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, UCL.ScrollBox, DwmApi;
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, UCL.Form, DwmApi,
+  UCL.ScrollBox, Vcl.ExtCtrls, UCL.Panel;
 
 const
   KeyEvent = WM_USER + 1;
+  THUMBHEIGHT = 132;
 
 type
   TAccentPolicy = packed record
@@ -23,10 +25,9 @@ type
     SizeOfData: Integer;
   end;
 
-  TfrmAltTabPro = class(TForm)
-    Memo1: TMemo;
-    UScrollBox1: TUScrollBox;
+  TfrmAltTabPro = class(TUForm)
     ListBox1: TListBox;
+    UPanel1: TUPanel;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -142,6 +143,10 @@ var
   KeyName: String;
   Res: Integer;
   command: String;
+  ThumbProps: DWM_THUMBNAIL_PROPERTIES;
+  ThumbSize: SIZE;
+  LHWindow: Cardinal;
+  LHThumb: HTHUMBNAIL;
 begin
   if not Visible then
   begin
@@ -156,7 +161,7 @@ begin
 
   if command = 'prev' then
   begin
-    Memo1.Lines.Add('prev');
+    //Memo1.Lines.Add('prev');
     with ListBox1 do
     begin
       if ItemIndex = 0 then
@@ -167,13 +172,41 @@ begin
   end
   else if command = 'next' then
   begin
-    Memo1.Lines.Add('next');
+    //Memo1.Lines.Add('next');
     with ListBox1 do
     begin
       if ItemIndex = Items.Count - 1 then
         ItemIndex := 0
       else
         ItemIndex := ItemIndex + 1;
+    end;
+  end;
+  LHWindow := StrToInt(appHandlers[ListBox1.ItemIndex]);
+  UPanel1.Caption := appHandlers[ListBox1.ItemIndex];
+
+  // draw thumbnail
+  if LHThumb <> 0 then
+    DwmUnregisterThumbnail(LHThumb);
+
+  if Succeeded(DwmRegisterThumbnail(Handle, LHWindow, @LHThumb)) then
+  begin
+    DwmQueryThumbnailSourceSize(LHThumb, @ThumbSize);
+    if (ThumbSize.cx <> 0) and (ThumbSize.cy <> 0) then
+    begin
+      ThumbProps.dwFlags := DWM_TNP_SOURCECLIENTAREAONLY
+                            or DWM_TNP_VISIBLE
+                            or DWM_TNP_OPACITY
+                            or DWM_TNP_RECTDESTINATION;
+      ThumbProps.fSourceClientAreaOnly := False;
+      ThumbProps.fVisible := True;
+      ThumbProps.opacity := 255;
+      ThumbProps.rcDestination := Rect(
+        UPanel1.Left,
+        UPanel1.Top,
+        UPanel1.Left+UPanel.Width,
+        UPanel1.Top+UPanel.Height
+      );
+      DwmUpdateThumbnailProperties(LHThumb, ThumbProps);
     end;
   end;
 end;
