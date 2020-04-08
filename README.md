@@ -43,3 +43,8 @@ You can list tasks using a carrousel like animation
 
 Lists apps in simple vertical listbox, but you can also show its window in the list side
 
+### WIP
+
+Just a simple snapshot.
+
+[snap](https://i.imgur.com/mSZWNpV.png)
