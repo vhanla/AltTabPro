@@ -196,14 +196,15 @@ procedure TfrmAltTabPro.FormKeyUp(Sender: TObject; var Key: Word;
 begin
   if key = VK_MENU then
   begin
-    //Hide;
-    ShowWindow(Handle, SW_HIDE);
     if (ListBox1.Items.Count > 0)
     and (ListBox1.ItemIndex < ListBox1.Items.Count)
     and (ListBox1.ItemIndex >= 0)
     then
     begin
+      //SetForegroundWindow(StrToInt(appHandlers[ListBox1.ItemIndex]));
       SwitchToThisWindow(StrToInt(appHandlers[ListBox1.ItemIndex]), True);
+      //Hide;
+      ShowWindow(Handle, SW_HIDE);
     end;
     ListApps;
   end;
