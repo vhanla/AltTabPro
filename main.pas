@@ -198,7 +198,10 @@ begin
   begin
     //Hide;
     ShowWindow(Handle, SW_HIDE);
-    if ListBox1.Items.Count > 0 then
+    if (ListBox1.Items.Count > 0)
+    and (ListBox1.ItemIndex < ListBox1.Items.Count)
+    and (ListBox1.ItemIndex >= 0)
+    then
     begin
       SwitchToThisWindow(StrToInt(appHandlers[ListBox1.ItemIndex]), True);
     end;
@@ -231,32 +234,30 @@ begin
 
   command := PChar(Msg.LParam);
 
-  if command = 'prev' then
+  if (ListBox1.Items.Count > 0) and (ListBox1.ItemIndex < ListBox1.Items.Count) then
   begin
-    //Memo1.Lines.Add('prev');
-    with ListBox1 do
+
+    if command = 'prev' then
     begin
-      if ItemIndex = 0 then
-        ItemIndex := Items.Count - 1
+      //Memo1.Lines.Add('prev');
+      if ListBox1.ItemIndex = 0 then
+        ListBox1.ItemIndex := ListBox1.Items.Count - 1
       else
-        ItemIndex := ItemIndex - 1;
-    end;
-  end
-  else if command = 'next' then
-  begin
-    //Memo1.Lines.Add('next');
-    with ListBox1 do
+        ListBox1.ItemIndex := ListBox1.ItemIndex - 1;
+    end
+    else if command = 'next' then
     begin
-      if ItemIndex = Items.Count - 1 then
-        ItemIndex := 0
+      //Memo1.Lines.Add('next');
+      if ListBox1.ItemIndex = ListBox1.Items.Count - 1 then
+        ListBox1.ItemIndex := 0
       else
-        ItemIndex := ItemIndex + 1;
+        ListBox1.ItemIndex := ListBox1.ItemIndex + 1;
     end;
+
+    LHWindow := StrToInt(appHandlers[ListBox1.ItemIndex]);
+    UPanel1.Caption := appHandlers[ListBox1.ItemIndex];
+
   end;
-
-  LHWindow := StrToInt(appHandlers[ListBox1.ItemIndex]);
-  UPanel1.Caption := appHandlers[ListBox1.ItemIndex];
-
   // draw desktop
   DrawDesktop;
   // draw taskbar
@@ -305,6 +306,9 @@ var
   Cloaked: Cardinal;
   title: array [0..255] of char;
 begin
+  appHandlers.BeginUpdate;
+  ListBox1.Items.BeginUpdate;
+
   appHandlers.Clear;
   ListBox1.Items.Clear;
 
@@ -338,6 +342,9 @@ begin
     end;
     LHWindow:=GetWindow(LHWindow, GW_HWNDNEXT);
   end;
+
+  ListBox1.Items.EndUpdate;
+  appHandlers.EndUpdate;
 end;
 
 end.
