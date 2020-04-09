@@ -3,8 +3,8 @@ object frmAltTabPro: TfrmAltTabPro
   Top = 0
   BorderStyle = bsNone
   Caption = 'AltTabPro'
-  ClientHeight = 278
-  ClientWidth = 526
+  ClientHeight = 393
+  ClientWidth = 772
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -24,16 +24,17 @@ object frmAltTabPro: TfrmAltTabPro
     Left = 0
     Top = 0
     Width = 153
-    Height = 278
+    Height = 393
     Align = alLeft
     ItemHeight = 13
     TabOrder = 0
+    ExplicitHeight = 278
   end
   object UPanel1: TUPanel
     Left = 153
     Top = 0
-    Width = 373
-    Height = 278
+    Width = 619
+    Height = 393
     Align = alClient
     Color = 15132390
     TabOrder = 1
@@ -41,9 +42,7 @@ object frmAltTabPro: TfrmAltTabPro
     CustomBackColor.Color = 15132390
     CustomBackColor.LightColor = 15132390
     CustomBackColor.DarkColor = 2039583
-    ExplicitLeft = 304
-    ExplicitTop = 152
-    ExplicitWidth = 185
-    ExplicitHeight = 41
+    ExplicitWidth = 373
+    ExplicitHeight = 278
   end
 end

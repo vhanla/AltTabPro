@@ -34,9 +34,12 @@ type
     procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
   private
     { Private declarations }
+    ThumbDesktop, ThumbTaskbar, ThumbWindow: HTHUMBNAIL;
     procedure KeyEventHandler(var Msg: TMessage); message KeyEvent;
     procedure EnableBlur;
     procedure ListApps;
+    procedure DrawDesktop;
+    procedure DrawTaskbar;
   protected
     procedure CreateParams(var Params: TCreateParams); override;
   public
@@ -58,6 +61,8 @@ var
     external 'HotkeyHook.dll' name 'STARTHOOK';
   procedure StopHook; stdcall;
     external 'HotkeyHook.dll' name 'STOPHOOK';
+  function GetShellWindow:HWND;stdcall;
+  external user32 Name 'GetShellWindow';
 implementation
 
 {$R *.dfm}
@@ -67,6 +72,74 @@ begin
   inherited;
 
   Params.WinClassName := 'AltTabProHwnd';
+end;
+
+procedure TfrmAltTabPro.DrawDesktop;
+var
+  ThumbProps: DWM_THUMBNAIL_PROPERTIES;
+  ThumbSize: SIZE;
+  LHDesktop: HWND;
+begin
+  LHDesktop := GetShellWindow;
+
+  if ThumbDesktop <> 0 then
+    DwmUnregisterThumbnail(ThumbDesktop);
+
+  if Succeeded(DwmRegisterThumbnail(Handle, LHDesktop, @ThumbDesktop)) then
+  begin
+    DwmQueryThumbnailSourceSize(ThumbDesktop, @ThumbSize);
+    if (ThumbSize.cx <> 0) and (ThumbSize.cy <> 0) then
+    begin
+      ThumbProps.dwFlags := DWM_TNP_SOURCECLIENTAREAONLY
+                            or DWM_TNP_VISIBLE
+                            or DWM_TNP_OPACITY
+                            or DWM_TNP_RECTDESTINATION;
+      ThumbProps.fSourceClientAreaOnly := False;
+      ThumbProps.fVisible := True;
+      ThumbProps.opacity := 255;
+      ThumbProps.rcDestination := Rect(
+        UPanel1.Left,
+        UPanel1.Top,
+        UPanel1.Left+UPanel1.Width,
+        UPanel1.Top+UPanel1.Height
+      );
+      DwmUpdateThumbnailProperties(ThumbDesktop, ThumbProps);
+    end;
+  end;
+end;
+
+procedure TfrmAltTabPro.DrawTaskbar;
+var
+  ThumbProps: DWM_THUMBNAIL_PROPERTIES;
+  ThumbSize: SIZE;
+  LHDesktop: HWND;
+begin
+  LHDesktop := FindWindow('Shell_TrayWnd', nil);
+
+  if ThumbTaskbar <> 0 then
+    DwmUnregisterThumbnail(ThumbTaskbar);
+
+  if Succeeded(DwmRegisterThumbnail(Handle, LHDesktop, @ThumbTaskbar)) then
+  begin
+    DwmQueryThumbnailSourceSize(ThumbTaskbar, @ThumbSize);
+    if (ThumbSize.cx <> 0) and (ThumbSize.cy <> 0) then
+    begin
+      ThumbProps.dwFlags := DWM_TNP_SOURCECLIENTAREAONLY
+                            or DWM_TNP_VISIBLE
+                            or DWM_TNP_OPACITY
+                            or DWM_TNP_RECTDESTINATION;
+      ThumbProps.fSourceClientAreaOnly := False;
+      ThumbProps.fVisible := True;
+      ThumbProps.opacity := 255;
+      ThumbProps.rcDestination := Rect(
+        UPanel1.Left,
+        UPanel1.Top+UPanel1.Height-15,
+        UPanel1.Left+UPanel1.Width,
+        UPanel1.Top+UPanel1.Height
+      );
+      DwmUpdateThumbnailProperties(ThumbTaskbar, ThumbProps);
+    end;
+  end;
 end;
 
 procedure TfrmAltTabPro.EnableBlur;
@@ -146,7 +219,6 @@ var
   ThumbProps: DWM_THUMBNAIL_PROPERTIES;
   ThumbSize: SIZE;
   LHWindow: Cardinal;
-  LHThumb: HTHUMBNAIL;
 begin
   if not Visible then
   begin
@@ -181,16 +253,21 @@ begin
         ItemIndex := ItemIndex + 1;
     end;
   end;
+
   LHWindow := StrToInt(appHandlers[ListBox1.ItemIndex]);
   UPanel1.Caption := appHandlers[ListBox1.ItemIndex];
 
+  // draw desktop
+  DrawDesktop;
+  // draw taskbar
+  DrawTaskbar;
   // draw thumbnail
-  if LHThumb <> 0 then
-    DwmUnregisterThumbnail(LHThumb);
+  if ThumbWindow <> 0 then
+    DwmUnregisterThumbnail(ThumbWindow);
 
-  if Succeeded(DwmRegisterThumbnail(Handle, LHWindow, @LHThumb)) then
+  if Succeeded(DwmRegisterThumbnail(Handle, LHWindow, @ThumbWindow)) then
   begin
-    DwmQueryThumbnailSourceSize(LHThumb, @ThumbSize);
+    DwmQueryThumbnailSourceSize(ThumbWindow, @ThumbSize);
     if (ThumbSize.cx <> 0) and (ThumbSize.cy <> 0) then
     begin
       ThumbProps.dwFlags := DWM_TNP_SOURCECLIENTAREAONLY
@@ -201,12 +278,12 @@ begin
       ThumbProps.fVisible := True;
       ThumbProps.opacity := 255;
       ThumbProps.rcDestination := Rect(
-        UPanel1.Left,
-        UPanel1.Top,
-        UPanel1.Left+UPanel.Width,
-        UPanel1.Top+UPanel.Height
+        UPanel1.Left+25,
+        UPanel1.Top+25,
+        UPanel1.Left+UPanel1.Width-50,
+        UPanel1.Top+UPanel1.Height-50
       );
-      DwmUpdateThumbnailProperties(LHThumb, ThumbProps);
+      DwmUpdateThumbnailProperties(ThumbWindow, ThumbProps);
     end;
   end;
 end;
