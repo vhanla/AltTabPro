@@ -48,3 +48,5 @@ Lists apps in simple vertical listbox, but you can also show its window in the l
 Just a simple snapshot.
 
 ![snap](https://i.imgur.com/mSZWNpV.png)
+
+![snap2](https://i.imgur.com/bq8wq8W.png)
