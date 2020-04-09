@@ -116,73 +116,76 @@ begin
     HC_ACTION:
     begin
       ParentHandle := FindWindow('AltTabProHwnd', nil);
-      hs := PKBDLLHOOKSTRUCT(lParam);
-      CtrlPressed := GetAsyncKeyState(VK_CONTROL) and $8000 <> 0;
-      ShiftPressed := GetAsyncKeyState(VK_SHIFT) and $8000 <> 0;
-      AltPressed := GetAsyncKeyState(VK_MENU) and $8000 <> 0;
-
-      if ((hs^.vkCode = VK_TAB) and ((hs^.flags and LLKHF_ALTDOWN)<>0))
-      or ((hs^.vkCode = VK_TAB) and ShiftPressed and ((hs^.flags and LLKHF_ALTDOWN)<>0))
-      then
+      if ParentHandle > 0 then
       begin
-        //SendMessageTimeout(ParentHandle, KeyEvent, wParam, lParam, SMTO_NORMAL, 500, nil);
-        if ShiftPressed then command := 'prev' else command := 'next';
+        hs := PKBDLLHOOKSTRUCT(lParam);
+        CtrlPressed := GetAsyncKeyState(VK_CONTROL) and $8000 <> 0;
+        ShiftPressed := GetAsyncKeyState(VK_SHIFT) and $8000 <> 0;
+        AltPressed := GetAsyncKeyState(VK_MENU) and $8000 <> 0;
 
-        if (hs^.flags and LLKHF_UP) <> 0 then
-        SendMessageTimeout(ParentHandle, KeyEvent, wParam, Windows.LPARAM(PChar(command)), SMTO_NORMAL, 500, nil);
-        if GetForegroundWindow <> ParentHandle then
+        if ((hs^.vkCode = VK_TAB) and ((hs^.flags and LLKHF_ALTDOWN)<>0))
+        or ((hs^.vkCode = VK_TAB) and ShiftPressed and ((hs^.flags and LLKHF_ALTDOWN)<>0))
+        then
         begin
-          ShowWindow(ParentHandle, SW_SHOWNORMAL);
-          SetForegroundWindow(ParentHandle);
-        end;
+          //SendMessageTimeout(ParentHandle, KeyEvent, wParam, lParam, SMTO_NORMAL, 500, nil);
+          if ShiftPressed then command := 'prev' else command := 'next';
 
-        Exit(1);
-      end;
-
-      if (hs^.vkCode = VK_TAB) and ((hs^.flags and LLKHF_UP) <> 0) then
-      begin
-        ShowWindow(ParentHandle, SW_HIDE);
-      end;
-
-
-      (*SetLength(KeyName, 32);
-      Res := GetKeyNameText(lParam, @KeyName[1], Length(KeyName));
-      ParentHandle := FindWindow('AltTabProHwnd', nil);
-      if ParentHandle <> 0 then
-      begin
-        KeyUp := (lParam and (1 shl 31)) <> 0;
-
-        { Alt Key }
-        AltPressed := False;
-        if (lParam and (1 shl 29)) <> 0 then
-          AltPressed := True;
-
-        { CtrlKey }
-        CtrlPressed := False;
-        if ((GetAsyncKeyState(VK_CONTROL) and (1 shl 15)) <> 0) then
-          CtrlPressed := True;
-
-        { Shift key }
-        ShiftPressed := False;
-        if ((GetAsyncKeyState(VK_SHIFT) and (1 shl 15)) <> 0) then
-          ShiftPressed := True;
-
-        { If KeyUp then increment the key count }
-        if (KeyUp <> False) then
-          Inc(lpHookRec^.KeyCount);
-
-        case wParam of
-          VK_TAB:
+          if (hs^.flags and LLKHF_UP) <> 0 then
+          SendMessageTimeout(ParentHandle, KeyEvent, wParam, Windows.LPARAM(PChar(command)), SMTO_NORMAL, 500, nil);
+          if GetForegroundWindow <> ParentHandle then
           begin
-
+            ShowWindow(ParentHandle, SW_SHOWNORMAL);
+            SetForegroundWindow(ParentHandle);
           end;
+
+          Exit(1);
         end;
 
-        SendMessageTimeout(ParentHandle, KeyEvent, wParam, lParam, SMTO_NORMAL, 500, nil);
-      end;*)
+        if (hs^.vkCode = VK_TAB) and ((hs^.flags and LLKHF_UP) <> 0) then
+        begin
+          ShowWindow(ParentHandle, SW_HIDE);
+        end;
 
-      { Allow the keystroke }
-    //  Result := 0;
+
+        (*SetLength(KeyName, 32);
+        Res := GetKeyNameText(lParam, @KeyName[1], Length(KeyName));
+        ParentHandle := FindWindow('AltTabProHwnd', nil);
+        if ParentHandle <> 0 then
+        begin
+          KeyUp := (lParam and (1 shl 31)) <> 0;
+
+          { Alt Key }
+          AltPressed := False;
+          if (lParam and (1 shl 29)) <> 0 then
+            AltPressed := True;
+
+          { CtrlKey }
+          CtrlPressed := False;
+          if ((GetAsyncKeyState(VK_CONTROL) and (1 shl 15)) <> 0) then
+            CtrlPressed := True;
+
+          { Shift key }
+          ShiftPressed := False;
+          if ((GetAsyncKeyState(VK_SHIFT) and (1 shl 15)) <> 0) then
+            ShiftPressed := True;
+
+          { If KeyUp then increment the key count }
+          if (KeyUp <> False) then
+            Inc(lpHookRec^.KeyCount);
+
+          case wParam of
+            VK_TAB:
+            begin
+
+            end;
+          end;
+
+          SendMessageTimeout(ParentHandle, KeyEvent, wParam, lParam, SMTO_NORMAL, 500, nil);
+        end;*)
+
+        { Allow the keystroke }
+      //  Result := 0;
+      end;
       Result := CallNextHookEx(lpHookRec^.HookHandle, nCode, wParam, lParam);
     end;
 
