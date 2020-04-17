@@ -13,7 +13,8 @@ library HotkeyHook;
 uses
   System.SysUtils,
   System.Classes,
-  Windows, Messages;
+  Windows,
+  Messages;
 
 const
   KeyEvent = WM_USER + 1;
@@ -115,17 +116,17 @@ begin
   case nCode of
     HC_ACTION:
     begin
-      ParentHandle := FindWindow('AltTabProHwnd', nil);
-      if ParentHandle > 0 then
-      begin
-        hs := PKBDLLHOOKSTRUCT(lParam);
-        CtrlPressed := GetAsyncKeyState(VK_CONTROL) and $8000 <> 0;
-        ShiftPressed := GetAsyncKeyState(VK_SHIFT) and $8000 <> 0;
-        AltPressed := GetAsyncKeyState(VK_MENU) and $8000 <> 0;
+      hs := PKBDLLHOOKSTRUCT(lParam);
+      CtrlPressed := GetAsyncKeyState(VK_CONTROL) and $8000 <> 0;
+      ShiftPressed := GetAsyncKeyState(VK_SHIFT) and $8000 <> 0;
+      AltPressed := GetAsyncKeyState(VK_MENU) and $8000 <> 0;
 
-        if ((hs^.vkCode = VK_TAB) and ((hs^.flags and LLKHF_ALTDOWN)<>0))
-        or ((hs^.vkCode = VK_TAB) and ShiftPressed and ((hs^.flags and LLKHF_ALTDOWN)<>0))
-        then
+      if ((hs^.vkCode = VK_TAB) and ((hs^.flags and LLKHF_ALTDOWN)<>0))
+      or ((hs^.vkCode = VK_TAB) and ShiftPressed and ((hs^.flags and LLKHF_ALTDOWN)<>0))
+      then
+      begin
+        ParentHandle := FindWindow('AltTabProHwnd', nil);
+        if ParentHandle > 0 then
         begin
           //SendMessageTimeout(ParentHandle, KeyEvent, wParam, lParam, SMTO_NORMAL, 500, nil);
           if ShiftPressed then command := 'prev' else command := 'next';
@@ -140,11 +141,12 @@ begin
 
           Exit(1);
         end;
+      end;
 
-        if (hs^.vkCode = VK_TAB) and ((hs^.flags and LLKHF_UP) <> 0) then
-        begin
-          ShowWindow(ParentHandle, SW_HIDE);
-        end;
+      if (hs^.vkCode = VK_TAB) and ((hs^.flags and LLKHF_UP) <> 0) then
+      begin
+        //ShowWindow(ParentHandle, SW_HIDE);
+      end;
 
 
         (*SetLength(KeyName, 32);
@@ -185,7 +187,6 @@ begin
 
         { Allow the keystroke }
       //  Result := 0;
-      end;
       Result := CallNextHookEx(lpHookRec^.HookHandle, nCode, wParam, lParam);
     end;
 
