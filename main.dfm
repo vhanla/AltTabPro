@@ -28,7 +28,6 @@ object frmAltTabPro: TfrmAltTabPro
     Align = alLeft
     ItemHeight = 13
     TabOrder = 0
-    ExplicitHeight = 278
   end
   object UPanel1: TUPanel
     Left = 153
@@ -42,7 +41,5 @@ object frmAltTabPro: TfrmAltTabPro
     CustomBackColor.Color = 15132390
     CustomBackColor.LightColor = 15132390
     CustomBackColor.DarkColor = 2039583
-    ExplicitWidth = 373
-    ExplicitHeight = 278
   end
 end
