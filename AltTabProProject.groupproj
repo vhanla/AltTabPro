@@ -4,10 +4,10 @@
     </PropertyGroup>
     <ItemGroup>
         <Projects Include="AltTabPro.dproj">
-            <Dependencies/>
+            <Dependencies>HotkeyHook.dproj</Dependencies>
         </Projects>
         <Projects Include="HotkeyHook.dproj">
-            <Dependencies>AltTabPro.dproj</Dependencies>
+            <Dependencies/>
         </Projects>
     </ItemGroup>
     <ProjectExtensions>
@@ -17,22 +17,22 @@
             <Default.Personality/>
         </BorlandProject>
     </ProjectExtensions>
-    <Target Name="AltTabPro">
+    <Target Name="AltTabPro" DependsOnTargets="HotkeyHook">
         <MSBuild Projects="AltTabPro.dproj"/>
     </Target>
-    <Target Name="AltTabPro:Clean">
+    <Target Name="AltTabPro:Clean" DependsOnTargets="HotkeyHook:Clean">
         <MSBuild Projects="AltTabPro.dproj" Targets="Clean"/>
     </Target>
-    <Target Name="AltTabPro:Make">
+    <Target Name="AltTabPro:Make" DependsOnTargets="HotkeyHook:Make">
         <MSBuild Projects="AltTabPro.dproj" Targets="Make"/>
     </Target>
-    <Target Name="HotkeyHook" DependsOnTargets="AltTabPro">
+    <Target Name="HotkeyHook">
         <MSBuild Projects="HotkeyHook.dproj"/>
     </Target>
-    <Target Name="HotkeyHook:Clean" DependsOnTargets="AltTabPro:Clean">
+    <Target Name="HotkeyHook:Clean">
         <MSBuild Projects="HotkeyHook.dproj" Targets="Clean"/>
     </Target>
-    <Target Name="HotkeyHook:Make" DependsOnTargets="AltTabPro:Make">
+    <Target Name="HotkeyHook:Make">
         <MSBuild Projects="HotkeyHook.dproj" Targets="Make"/>
     </Target>
     <Target Name="Build">
