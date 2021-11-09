@@ -4,8 +4,9 @@ interface
 
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, UCL.Form, DwmApi,
-  UCL.ScrollBox, Vcl.ExtCtrls, UCL.Panel;
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, UWP.Form, DwmApi,
+  UWP.ScrollBox, Vcl.ExtCtrls, UWP.Panel, System.ImageList, Vcl.ImgList,
+  Vcl.WinXCtrls;
 
 const
   KeyEvent = WM_USER + 1;
@@ -25,13 +26,18 @@ type
     SizeOfData: Integer;
   end;
 
-  TfrmAltTabPro = class(TUForm)
+  TfrmAltTabPro = class(TUWPForm)
     ListBox1: TListBox;
-    UPanel1: TUPanel;
+    UPanel1: TUWPPanel;
+    ImageList1: TImageList;
+    SearchBox1: TSearchBox;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure ListBox1KeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure ListBox1DrawItem(Control: TWinControl; Index: Integer;
+      Rect: TRect; State: TOwnerDrawState);
   private
     { Private declarations }
     ThumbDesktop, ThumbTaskbar, ThumbWindow: HTHUMBNAIL;
@@ -63,7 +69,16 @@ var
     external 'HotkeyHook.dll' name 'STOPHOOK';
   function GetShellWindow:HWND;stdcall;
   external user32 Name 'GetShellWindow';
+  function  RegisterShellHookWindow( hWnd : HWND ) : BOOL;    stdcall;
+    external user32 name 'RegisterShellHookWindow';
+  function  DeregisterShellHookWindow( hWnd : HWND) : BOOL;  stdcall;
+    external user32 name 'DeregisterShellHookWindow';
+
+
 implementation
+
+uses
+  Winapi.ShellAPI;
 
 {$R *.dfm}
 
@@ -72,6 +87,10 @@ begin
   inherited;
 
   Params.WinClassName := 'AltTabProHwnd';
+
+  Params.ExStyle := Params.ExStyle and not WS_EX_APPWINDOW;
+  Params.WndParent := Application.Handle;
+//  Params.Style := WS_POPUP or WS_VISIBLE;
 end;
 
 procedure TfrmAltTabPro.DrawDesktop;
@@ -170,6 +189,11 @@ end;
 
 procedure TfrmAltTabPro.FormCreate(Sender: TObject);
 begin
+  SetWindowLong(Application.Handle, GWL_EXSTYLE,
+    (GetWindowLong(Application.Handle, GWL_EXSTYLE)
+    OR WS_EX_TOOLWINDOW) AND NOT WS_EX_APPWINDOW);
+
+  RegisterShellHookWindow(Handle);
   StartHook;
 
   BorderStyle := bsSingle;
@@ -189,12 +213,13 @@ procedure TfrmAltTabPro.FormDestroy(Sender: TObject);
 begin
   StopHook;
   appHandlers.Free;
+  DeregisterShellHookWindow(Handle);
 end;
 
 procedure TfrmAltTabPro.FormKeyUp(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 begin
-  if key = VK_MENU then
+{  if key = VK_MENU then
   begin
     if (ListBox1.Items.Count > 0)
     and (ListBox1.ItemIndex < ListBox1.Items.Count)
@@ -207,12 +232,17 @@ begin
       //ShowWindow(Handle, SW_HIDE);
     end;
     ListApps;
-  end;
+  end;}
 end;
 
 procedure TfrmAltTabPro.FormShow(Sender: TObject);
 begin
+  SetWindowLong(Application.Handle, GWL_EXSTYLE,
+    (GetWindowLong(Application.Handle, GWL_EXSTYLE)
+      OR WS_EX_TOOLWINDOW) AND NOT WS_EX_APPWINDOW);
   ShowWindow(Application.Handle, SW_HIDE);
+  if ListBox1.Items.Count > 0 then
+    ListBox1.ItemIndex := 0;
 end;
 
 procedure TfrmAltTabPro.KeyEventHandler(var Msg: TMessage);
@@ -226,21 +256,39 @@ var
   LHRect: TRect;
   IsShown: Boolean;
 begin
+  command := PChar(Msg.LParam);
+
   IsShown := False;
-  if not Visible then
+
+  if command = 'refresh' then
+    if Visible then
+      SearchBox1.Visible := False
+    else
+      Exit;
+
+  if not Visible and (command <> 'released') then
   begin
     ListApps;
     Show;
     IsShown := True;
+    SetWindowLong(Application.Handle, GWL_EXSTYLE,
+        (GetWindowLong(Application.Handle, GWL_EXSTYLE)
+          OR WS_EX_TOOLWINDOW) AND NOT WS_EX_APPWINDOW);
+      ShowWindow(Application.Handle, SW_HIDE);
   end;
+  ShellExecute(GetDesktopWindow, 'OPEN', PChar(ExtractFilePath(ParamStr(0))+'forceswitch.exe'), nil, nil, SW_SHOWNA);
   //SetLength(KeyName, 32);
   //Res := GetKeyNameText(Msg.LParam, @KeyName[1], Length(KeyName));
   //KeyName := copy(KeyName, 1, Res);
 
-  command := PChar(Msg.LParam);
 
-  if (ListBox1.Items.Count > 0) and (ListBox1.ItemIndex < ListBox1.Items.Count) then
+  if (ListBox1.Items.Count > 0)
+//  and (ListBox1.ItemIndex >= 0)
+  and (ListBox1.ItemIndex < ListBox1.Items.Count)
+  then
   begin
+    if ListBox1.ItemIndex < 0 then
+      ListBox1.ItemIndex := 0;
 
     if command = 'prev' then
     begin
@@ -257,6 +305,30 @@ begin
         ListBox1.ItemIndex := 0
       else
         ListBox1.ItemIndex := ListBox1.ItemIndex + 1;
+    end
+    else if command = 'released' then
+    begin
+      if Visible and not SearchBox1.Visible then
+      begin
+        Hide;
+        Sleep(10);
+        var app := StrToInt(appHandlers[ListBox1.ItemIndex]);
+        if IsWindow(app) then
+        begin
+          SwitchToThisWindow(app, True);
+          SetForegroundWindow(app);
+        end;
+      end;
+    end
+    else if command = 'escaped' then
+    begin
+      ListBox1.ItemIndex := 0;
+      Hide;
+    end
+    else if command = 'command' then
+    begin
+      SearchBox1.Visible := True;
+      SearchBox1.SetFocus;
     end;
 
     if IsShown then
@@ -302,7 +374,30 @@ begin
   end;
 end;
 
+type
+  PChildWindowInfo = ^TChildWindowInfo;
+  TChildWindowInfo = record
+    ownerPid: UINT;
+    childPid: UINT;
+end;
+
+function EnumChildWindowsProc(Wnd: HWND; ChildInfo: PChildWindowInfo): BOOL; export; stdcall;
+var
+  aPID: DWORD;
+begin
+  Result := False;
+  aPID := 0;
+  GetWindowThreadProcessId(Wnd,aPID);
+  if aPID <> ChildInfo.ownerPid then
+  begin
+    ChildInfo.childPid := aPID;
+    Result := True;
+  end;
+end;
+
 procedure TfrmAltTabPro.ListApps;
+type
+  TQueryFullProcessImageName = function(hProcess: THandle; dwFlags: DWORD; lpExeName: PChar; nSize: PDWORD): BOOL; stdcall;
 const
   WS_EX_NOREDIRECTIONBITMAP = $200000;
   DWMWA_CLOAKED = 14; // Windows 8 or superior only
@@ -331,12 +426,27 @@ var
   title: array [0..255] of char;
   IsInCurrentDesktop: Boolean;
   DesktopId: string;
+
+  fIcon: HICON;
+  aIcon: TIcon;
+  lpsfi: SHFILEINFO;
+  fIconIndex: WORD;
+  WinFileName: String;
+  PID: DWORD;
+  hProcess, hProcess2: THandle;
+  FileName, FileName2: array[0..MAX_PATH -1] of Char;
+  QueryFullProcessImageName: TQueryFullProcessImageName;
+  nSize: Cardinal;
+  FilePath: array[0..MAX_PATH] of WideChar;
+  windowInfo: TChildWindowInfo;
+  GuiInfo: TGUIThreadInfo;
 begin
   appHandlers.BeginUpdate;
   ListBox1.Items.BeginUpdate;
 
   appHandlers.Clear;
   ListBox1.Items.Clear;
+  ImageList1.Clear;
 
   hMod := LoadLibrary('win32u.dll');
   if hMod <> 0 then
@@ -396,12 +506,95 @@ begin
                   GetWindowText(LHWindow,title, 256);
                 end;
 
+                var validApp := False;
                 if ((cloaked = DWM_NOT_CLOAKED) or (cloaked = DWM_NORMAL_APP_NOT_CLOAKED))
                 or(LExStyle = (WS_EX_NOREDIRECTIONBITMAP + WS_EX_TOPMOST)) then
-                  begin
+                begin
                     appHandlers.Add(IntToStr(LHWindow));
                     ListBox1.Items.Add(title);
+                    validApp := True;
+                end;
+
+                // get icon
+                GetWindowThreadProcessId(LHWindow, PID);
+                hProcess := OpenProcess(PROCESS_ALL_ACCESS, False, PID);
+                if (hProcess <> 0) and validApp then
+                try
+                  nSize := MAX_PATH;
+                  ZeroMemory(@FileName, MAX_PATH);
+                  // WinVista +
+                  @QueryFullProcessImageName := GetProcAddress(GetModuleHandle(kernel32), 'QueryFullProcessImageNameW');
+                  if Assigned(QueryFullProcessImageName) then
+                  begin
+                    if QueryFullProcessImageName(hProcess, 0, FileName, @nSize) then
+                    begin
+                      SetString(WinFileName, PChar(@FileName[0]), nSize);
+                      StrPLCopy(FilePath, WinFileName, High(FilePath));
+                      if WinFileName.Contains('32\ApplicationFrameHost.exe') then
+                      begin
+                        // let's find the right UWP executable
+                        //fAppItem.FilePath := 'UWP APP';
+                        windowInfo.ownerPid := PID;
+                        windowInfo.childPid := PID;
+                        GetGUIThreadInfo(PID,GuiInfo);
+                        EnumChildWindows(LHWindow,@EnumChildWindowsProc,LParam(@windowInfo));
+                        Sleep(1);
+                        // if found, let's find its executable path again
+                        if windowInfo.ownerPid <> windowInfo.childPid then
+                        begin
+                          hProcess2 := OpenProcess(PROCESS_ALL_ACCESS, False, windowInfo.childPid);
+                          if hProcess2 <> 0 then
+                          try
+                            if QueryFullProcessImageName(hProcess2, 0, FileName2, @nSize) then
+                            begin
+                              SetString(WinFileName, PChar(@FileName2[0]), nSize);
+                              StrPLCopy(FilePath, WinFileName, High(FilePath));
+                            end;
+                          finally
+                            CloseHandle(hProcess2);
+                          end;
+                        end;
+                      end;
+                      //fAppItem.Executable := ExtractFileName(FileName);
+                    end;
                   end;
+
+                  ZeroMemory(@lpsfi, SizeOf(SHFILEINFO));
+                  SHGetFileInfo(PChar(WinFileName),FILE_ATTRIBUTE_NORMAL,
+                    lpsfi, SizeOf(SHFILEINFO), SHGFI_ICON or SHGFI_LARGEICON);
+
+                  aIcon := TIcon.Create;
+                  try
+                    aIcon.Handle := GetClassLong(LHWindow, GCL_HICON);
+                    if aIcon.Handle = 0 then
+                      aIcon.Handle := GetClassLong(LHWindow, GCL_HICONSM);
+                        if aIcon.Handle = 0 then
+                          aIcon.Handle := lpsfi.hIcon;
+                            if aIcon.Handle = 0 then
+                              aIcon.Handle := ExtractAssociatedIcon(HInstance, PChar(WinFileName),fIconIndex);
+
+                    if aIcon.Handle <> 0 then
+                    begin
+                      ImageList1.AddIcon(aIcon);
+                    end
+                    else
+                    begin
+                      var bmp := TBitmap.Create;
+                      try
+                        bmp.SetSize(ImageList1.Width, ImageList1.Height);
+                        bmp.Canvas.FillRect(Rect(0, 0, bmp.Width, bmp.Height));
+                        ImageList1.AddMasked(bmp, bmp.TransparentColor);
+                      finally
+                        bmp.Free;
+                      end;
+                    end;
+
+                  finally
+                    aIcon.Free;
+                  end;
+                finally
+                  CloseHandle(hProcess);
+                end;
 
               end;
             end;
@@ -415,6 +608,45 @@ begin
 
   ListBox1.Items.EndUpdate;
   appHandlers.EndUpdate;
+end;
+
+procedure TfrmAltTabPro.ListBox1DrawItem(Control: TWinControl; Index: Integer;
+  Rect: TRect; State: TOwnerDrawState);
+begin
+  with (Control as TListBox).Canvas do
+  begin
+    if odSelected in State then
+      Brush.Color := $00FFD2A6
+    else
+      Brush.Color := clWhite;
+    FillRect(Rect);
+
+    if ImageList1.Count > ListBox1.ItemIndex then
+    begin
+      ImageList1.Draw(ListBox1.Canvas, Rect.Left + 2, Rect.Top + 4, Index);
+      TextOut(Rect.Left + 36, Rect.Top+6, ListBox1.Items[Index]);
+    end
+    else
+      TextOut(Rect.Left, Rect.Top+6, ListBox1.Items[Index]);
+
+    {TextOut(Rect.Left, Rect.Top, (Control as TListBox).Items[Index]);
+    if odFocused In State then begin
+      Brush.Color := ListBox1.Color;
+      DrawFocusRect(Rect);}
+  end;
+end;
+
+procedure TfrmAltTabPro.ListBox1KeyUp(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+{  if (GetAsyncKeyState(VK_LMENU) and $8000 <> 0)
+  or (GetAsyncKeyState(VK_RMENU) and $8000 <> 0)
+  then
+  begin
+
+  end
+  else
+    Hide;}
 end;
 
 end.
