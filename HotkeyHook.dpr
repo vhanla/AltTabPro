@@ -55,6 +55,12 @@ var
   hObjHandle: THandle; { Variable for the file mappgin object }
   lpHookRec: PHookRec;
   InvalidCombinations: TSystemKeyCombinations;
+  AltPressed: BOOL;
+  CtrlPressed: BOOL;
+  ShiftPressed: BOOL;
+
+  procedure SwitchToThisWindow(h1: hWnd; x: bool); stdcall;
+  external user32 Name 'SwitchToThisWindow';
 
 { Pointer to our hook record }
 procedure MapFileMemory (dwAllocSize: DWORD);
@@ -102,9 +108,9 @@ end;
 function KeyboardProc(nCode: Integer; wParam: WPARAM; lParam: LPARAM): LRESULT; stdcall;
 var
   KeyUp: BOOL;
-  AltPressed: BOOL;
-  CtrlPressed: BOOL;
-  ShiftPressed: BOOL;
+//  AltPressed: BOOL;
+//  CtrlPressed: BOOL;
+//  ShiftPressed: BOOL;
   KeyName: string;
   Res: Integer;
   ParentHandle: HWND;
@@ -117,36 +123,122 @@ begin
     HC_ACTION:
     begin
       hs := PKBDLLHOOKSTRUCT(lParam);
-      CtrlPressed := GetAsyncKeyState(VK_CONTROL) and $8000 <> 0;
-      ShiftPressed := GetAsyncKeyState(VK_SHIFT) and $8000 <> 0;
-      AltPressed := GetAsyncKeyState(VK_MENU) and $8000 <> 0;
+//      CtrlPressed := GetAsyncKeyState(VK_CONTROL) and $8000 <> 0;
+//      ShiftPressed := GetAsyncKeyState(VK_SHIFT) and $8000 <> 0;
+//      AltPressed := GetAsyncKeyState(VK_MENU) and $8000 <> 0;
 
-      if ((hs^.vkCode = VK_TAB) and ((hs^.flags and LLKHF_ALTDOWN)<>0))
-      or ((hs^.vkCode = VK_TAB) and ShiftPressed and ((hs^.flags and LLKHF_ALTDOWN)<>0))
+      if (wParam = WM_KEYDOWN) or (wParam = WM_SYSKEYDOWN) then
+      begin
+        if not ShiftPressed then
+          ShiftPressed := (hs^.vkCode = VK_SHIFT) or (hs^.vkCode = VK_LSHIFT) or (hs^.vkCode = VK_RSHIFT);
+        if not CtrlPressed then
+          CtrlPressed := (hs^.vkCode = VK_CONTROL) or (hs^.vkCode = VK_LCONTROL) or (hs^.vkCode = VK_RCONTROL);
+//        if not AltPressed then
+          if (hs^.vkCode = VK_MENU) or (hs^.vkCode = VK_LMENU) or (hs^.vkCode = VK_RMENU) then
+          begin
+            AltPressed := True;
+            ParentHandle := FindWindow('AltTabProHwnd', nil);
+            command := 'refresh';
+            if ParentHandle > 0 then
+              SendMessageTimeout(ParentHandle, KeyEvent, wParam, Windows.LPARAM(PChar(command)), SMTO_NORMAL, 500, nil);
+          end;
+      end;
+
+      if (wParam = WM_KEYUP) or (wParam = WM_SYSKEYUP) then
+      begin
+        if ShiftPressed then
+          ShiftPressed := not((hs^.vkCode = VK_SHIFT) or (hs^.vkCode = VK_LSHIFT) or (hs^.vkCode = VK_RSHIFT));
+        if CtrlPressed then
+          CtrlPressed := not((hs^.vkCode = VK_CONTROL) or (hs^.vkCode = VK_LCONTROL) or (hs^.vkCode = VK_RCONTROL));
+
+        if AltPressed
+        and ((hs^.vkCode = VK_MENU) or (hs^.vkCode = VK_LMENU) or (hs^.vkCode = VK_RMENU)) then
+        begin
+          AltPressed := False;
+          //alt was released
+          ParentHandle := FindWindow('AltTabProHwnd', nil);
+          command := 'released';
+          if ParentHandle > 0 then
+            SendMessageTimeout(ParentHandle, KeyEvent, wParam, Windows.LPARAM(PChar(command)), SMTO_NORMAL, 500, nil);
+        end;
+
+        if AltPressed
+        and ((hs^.vkCode = VK_ESCAPE) or (hs^.vkCode = VK_CAPITAL)) then
+        begin
+//          AltPressed := False;
+          ParentHandle := FindWindow('AltTabProHwnd', nil);
+          command := 'escaped';
+          if ParentHandle > 0 then
+            SendMessageTimeout(ParentHandle, KeyEvent, wParam, Windows.LPARAM(PChar(command)), SMTO_NORMAL, 500, nil);
+        end;
+
+        if AltPressed
+        and (hs^.vkCode = VK_SPACE) then
+        begin
+          ParentHandle := FindWindow('AltTabProHwnd', nil);
+          command := 'command';
+          if ParentHandle > 0 then
+            SendMessageTimeout(ParentHandle, KeyEvent, wParam, Windows.LPARAM(PChar(command)), SMTO_NORMAL, 500, nil);
+        end;
+
+        if AltPressed
+        and (hs^.vkCode = VK_TAB) then// and ((hs^.flags and LLKHF_ALTDOWN)<>0) then
+        begin
+          ParentHandle := FindWindow('AltTabProHwnd', nil);
+          command := 'next';
+          if ShiftPressed then
+            command := 'prev';
+          if (ParentHandle > 0) then//and IsWindowVisible(ParentHandle) then
+          begin
+            SendMessageTimeout(ParentHandle, KeyEvent, wParam, Windows.LPARAM(PChar(command)), SMTO_NORMAL, 500, nil);
+            if IsWindowVisible(ParentHandle) then
+            begin
+              SwitchToThisWindow(ParentHandle, True);
+              SetForegroundWindow(ParentHandle);
+              var PID: DWORD;
+              GetWindowThreadProcessId(ParentHandle, PID);
+              AllowSetForegroundWindow(PID);
+            end;
+          end;
+
+        end;
+
+      end;
+
+//      if (wParam = WM_KEYUP) or (wParam = WM_SYSKEYUP) then
+//      if ((hs^.vkCode = VK_TAB) and ((hs^.flags and LLKHF_ALTDOWN)<>0))
+//      or ((hs^.vkCode = VK_TAB) and ShiftPressed and ((hs^.flags and LLKHF_ALTDOWN)<>0))
+      if ((hs^.vkCode = VK_TAB) and AltPressed)
+      or ((hs^.vkCode = VK_ESCAPE) and AltPressed)
+      or ((hs^.vkCode = VK_TAB) and AltPressed and ShiftPressed)
       then
       begin
+        Exit(1);
         ParentHandle := FindWindow('AltTabProHwnd', nil);
         if ParentHandle > 0 then
         begin
           //SendMessageTimeout(ParentHandle, KeyEvent, wParam, lParam, SMTO_NORMAL, 500, nil);
-          if ShiftPressed then command := 'prev' else command := 'next';
 
-          if (hs^.flags and LLKHF_UP) <> 0 then
-          SendMessageTimeout(ParentHandle, KeyEvent, wParam, Windows.LPARAM(PChar(command)), SMTO_NORMAL, 500, nil);
+          {if ShiftPressed then command := 'prev' else command := 'next';
+
           if GetForegroundWindow <> ParentHandle then
           begin
             ShowWindow(ParentHandle, SW_SHOWNORMAL);
             SetForegroundWindow(ParentHandle);
           end;
 
+          if ((hs^.flags and LLKHF_UP) <> 0) then
+          SendMessageTimeout(ParentHandle, KeyEvent, wParam, Windows.LPARAM(PChar(command)), SMTO_NORMAL, 500, nil);
+           }
+          // block alt-tab from showing
           Exit(1);
         end;
       end;
 
-      if (hs^.vkCode = VK_TAB) and ((hs^.flags and LLKHF_UP) <> 0) then
-      begin
-        //ShowWindow(ParentHandle, SW_HIDE);
-      end;
+//      if (hs^.vkCode = VK_TAB) and ((hs^.flags and LLKHF_UP) <> 0) then
+//      begin
+//        ShowWindow(ParentHandle, SW_HIDE);
+//      end;
 
 
         (*SetLength(KeyName, 32);
@@ -190,17 +282,18 @@ begin
       Result := CallNextHookEx(lpHookRec^.HookHandle, nCode, wParam, lParam);
     end;
 
-    HC_NOREMOVE:
+    {HC_NOREMOVE:
     begin
       { This is a keystroke message, but the keystroke message has not been
       removed from the message queue, since an application has called
-      PeekMessage() specifying PM_NOREMOVE }
+      PeekMessage() specifying PM_NOREMOVE
       Result := 0;
       Exit;
-    end;
+    end;}
   end;
-  if nCode < 0 then
-    Result := CallNextHookEx(lpHookRec^.HookHandle, nCode, wParam, lParam);
+{  if nCode < 0 then
+    Result := CallNextHookEx(lpHookRec^.HookHandle, nCode, wParam, lParam);}
+  Result := CallNextHookEx(lpHookRec^.HookHandle, nCode, wParam, lParam);
 end;
 
 procedure StartHook; stdcall;
@@ -209,7 +302,13 @@ begin
   if ((lpHookRec <> nil) and (lpHookRec^.HookHandle = 0)) then
   begin
     { Set the hook and remember our hook handle }
-    lpHookRec^.HookHandle := SetWindowsHookEx(WH_KEYBOARD_LL, @KeyboardProc, HInstance, 0);
+//    var explorer := FindWindowEx(0, 0, 'Progman', nil);
+//    if explorer > 0 then
+    begin
+//      var PID: DWORD;
+//      GetWindowThreadProcessId(explorer, PID);
+      lpHookRec^.HookHandle := SetWindowsHookEx(WH_KEYBOARD_LL, @KeyboardProc, HInstance, 0);//PID);
+    end;
   end;
 end;
 
