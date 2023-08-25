@@ -4,9 +4,10 @@ interface
 
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, UWP.Form, DwmApi,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, DwmApi,
   UWP.ScrollBox, Vcl.ExtCtrls, UWP.Panel, System.ImageList, Vcl.ImgList,
-  Vcl.WinXCtrls;
+  Vcl.WinXCtrls, JvComponentBase, JvFormAutoSize, JvAppStorage, JvFormPlacement,
+  JvAppIniStorage, JvExExtCtrls, JvSplitter, JvFormTransparent;
 
 const
   KeyEvent = WM_USER + 1;
@@ -26,11 +27,12 @@ type
     SizeOfData: Integer;
   end;
 
-  TfrmAltTabPro = class(TUWPForm)
+  TfrmAltTabPro = class(TForm)
     ListBox1: TListBox;
     UPanel1: TUWPPanel;
     ImageList1: TImageList;
     SearchBox1: TSearchBox;
+    Splitter1: TSplitter;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -48,6 +50,7 @@ type
     procedure DrawTaskbar;
   protected
     procedure CreateParams(var Params: TCreateParams); override;
+    procedure WM_NCCalcSize(var Msg: TWMNCCalcSize); message WM_NCCALCSIZE;
   public
     { Public declarations }
   end;
@@ -196,7 +199,7 @@ begin
   RegisterShellHookWindow(Handle);
   StartHook;
 
-  BorderStyle := bsSingle;
+//  BorderStyle := bsSingle;
   BorderIcons := [];
   GlassFrame.Enabled := False;
 //  BorderStyle := bsNone;
@@ -647,6 +650,24 @@ begin
   end
   else
     Hide;}
+end;
+
+procedure TfrmAltTabPro.WM_NCCalcSize(var Msg: TWMNCCalcSize);
+var
+  LCaptionBarHeight: Integer;
+begin
+  inherited;
+
+  if BorderStyle = bsNone then Exit;
+
+  LCaptionBarHeight := GetSystemMetrics(SM_CYCAPTION);
+
+  if WindowState = wsNormal then
+    Inc(LCaptionBarHeight, GetSystemMetrics(SM_CYSIZEFRAME) +
+                GetSystemMetrics(SM_CXPADDEDBORDER));
+
+  Dec(Msg.CalcSize_Params.rgrc[0].Top, LCaptionBarHeight );
+
 end;
 
 end.

@@ -1,10 +1,9 @@
 object frmAltTabPro: TfrmAltTabPro
   Left = 0
   Top = 0
-  BorderStyle = bsNone
   Caption = 'AltTabPro - Window'
-  ClientHeight = 393
-  ClientWidth = 772
+  ClientHeight = 354
+  ClientWidth = 756
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -12,34 +11,38 @@ object frmAltTabPro: TfrmAltTabPro
   Font.Name = 'Tahoma'
   Font.Style = []
   KeyPreview = True
-  OldCreateOrder = False
   Position = poScreenCenter
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnKeyUp = FormKeyUp
   OnShow = FormShow
-  PixelsPerInch = 96
   TextHeight = 13
+  object Splitter1: TSplitter
+    Left = 201
+    Top = 27
+    Height = 327
+    ExplicitLeft = 384
+    ExplicitTop = 144
+    ExplicitHeight = 100
+  end
   object ListBox1: TListBox
     Left = 0
     Top = 27
     Width = 201
-    Height = 366
+    Height = 327
     Style = lbOwnerDrawVariable
     Align = alLeft
     ItemHeight = 32
     TabOrder = 0
     OnDrawItem = ListBox1DrawItem
     OnKeyUp = ListBox1KeyUp
-    ExplicitLeft = -6
-    ExplicitTop = 0
-    ExplicitHeight = 393
+    ExplicitHeight = 318
   end
   object UPanel1: TUWPPanel
-    Left = 201
+    Left = 204
     Top = 27
-    Width = 571
-    Height = 366
+    Width = 552
+    Height = 327
     Align = alClient
     Color = 15132390
     TabOrder = 1
@@ -47,13 +50,13 @@ object frmAltTabPro: TfrmAltTabPro
     CustomBackColor.Color = 15132390
     CustomBackColor.LightColor = 15132390
     CustomBackColor.DarkColor = 2039583
-    ExplicitTop = 0
-    ExplicitHeight = 393
+    ExplicitWidth = 546
+    ExplicitHeight = 318
   end
   object SearchBox1: TSearchBox
     Left = 0
     Top = 0
-    Width = 772
+    Width = 756
     Height = 27
     Align = alTop
     Font.Charset = DEFAULT_CHARSET
@@ -64,6 +67,7 @@ object frmAltTabPro: TfrmAltTabPro
     ParentFont = False
     TabOrder = 2
     Visible = False
+    ExplicitWidth = 750
   end
   object ImageList1: TImageList
     Height = 24
