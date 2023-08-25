@@ -13,31 +13,36 @@ var
   FClientId: DWORD;
 
 begin
-  HActiveWindow := GetForegroundWindow();
-  HForegroundThread := GetWindowThreadProcessId(HActiveWindow, @FClientId);
-  AllowSetForegroundWindow(FClientId);
-  HAppThread := GetCurrentThreadId;
 
   // Check if the window with title "AltTabPro - Window" exists
-  if FindWindow(nil, 'AltTabPro - Window') <> 0 then
+  var wnd := FindWindow(nil, 'AltTabPro - Window');
+  if wnd <> 0 then
   begin
-    if not SetForegroundWindow(FindWindow(nil, 'AltTabPro - Window')) then
+    HActiveWindow := GetForegroundWindow();
+    HForegroundThread := GetWindowThreadProcessId(HActiveWindow, @FClientId);
+    AllowSetForegroundWindow(FClientId);
+    HAppThread := GetCurrentThreadId;
+
+    if not SetForegroundWindow(wnd) then
       SwitchToThisWindow(GetDesktopWindow, True);
 
     if HForegroundThread <> HAppThread then
     begin
       AttachThreadInput(HForegroundThread, HAppThread, True);
-      BringWindowToTop(FindWindow(nil, 'AltTabPro - Window'));
-      Winapi.Windows.SetFocus(FindWindow(nil, 'AltTabPro - Window'));
+      BringWindowToTop(wnd);
+      Winapi.Windows.SetFocus(wnd);
       AttachThreadInput(HForegroundThread, HAppThread, False);
     end;
 
     Exit; // Exit the program since the window is already activated
-  end;
+  end
+  else
+  begin
 
-  Application.Initialize;
-//  Application.MainFormOnTaskbar := False;
-  Application.ShowMainForm := False;
-  Application.CreateForm(TfrmAltTabPro, frmAltTabPro);
-  Application.Run;
+    Application.Initialize;
+  //  Application.MainFormOnTaskbar := False;
+    Application.ShowMainForm := False;
+    Application.CreateForm(TfrmAltTabPro, frmAltTabPro);
+    Application.Run;
+  end;
 end.

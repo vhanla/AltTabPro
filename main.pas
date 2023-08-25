@@ -278,9 +278,11 @@ begin
         (GetWindowLong(Application.Handle, GWL_EXSTYLE)
           OR WS_EX_TOOLWINDOW) AND NOT WS_EX_APPWINDOW);
       ShowWindow(Application.Handle, SW_HIDE);
+    //TODO: it works most of the times, but it fails on focusing a hanged window
+    ShellExecute(GetDesktopWindow, 'OPEN', PChar(ParamStr(0)), nil, nil, SW_SHOWNA);
   end;
 
-  ShellExecute(GetDesktopWindow, 'OPEN', PChar(ParamStr(0)), nil, nil, SW_SHOWNA);
+//  ShellExecute(GetDesktopWindow, 'OPEN', PChar(ParamStr(0)), nil, nil, SW_SHOWNA);
 
   //SetLength(KeyName, 32);
   //Res := GetKeyNameText(Msg.LParam, @KeyName[1], Length(KeyName));
