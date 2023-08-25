@@ -279,7 +279,9 @@ begin
           OR WS_EX_TOOLWINDOW) AND NOT WS_EX_APPWINDOW);
       ShowWindow(Application.Handle, SW_HIDE);
   end;
-  ShellExecute(GetDesktopWindow, 'OPEN', PChar(ExtractFilePath(ParamStr(0))+'forceswitch.exe'), nil, nil, SW_SHOWNA);
+
+  ShellExecute(GetDesktopWindow, 'OPEN', PChar(ParamStr(0)), nil, nil, SW_SHOWNA);
+
   //SetLength(KeyName, 32);
   //Res := GetKeyNameText(Msg.LParam, @KeyName[1], Length(KeyName));
   //KeyName := copy(KeyName, 1, Res);
